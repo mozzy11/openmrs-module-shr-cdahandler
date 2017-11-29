@@ -103,7 +103,7 @@ public final class PatientRoleProcessorUtil {
 		{
 			candidateId = id;
 			pit = Context.getPatientService().getPatientIdentifierTypeByName(candidateId.getRoot());
-			if(pit != null && pit.getName().equals(this.m_configuration.getEcidRoot())) 
+			if(pit != null && (pit.getName().equals(this.m_configuration.getEcidRoot()) || pit.getName().equals("ECID")))
 				break; // don't look any further we have the ECID
 		}
 		

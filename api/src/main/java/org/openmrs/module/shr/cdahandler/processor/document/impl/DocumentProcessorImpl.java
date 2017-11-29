@@ -4,10 +4,12 @@ import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.dom4j.DocumentException;
@@ -159,6 +161,8 @@ public abstract class DocumentProcessorImpl implements DocumentProcessor {
 
 		// Create an encounter for the of the document
 		Encounter visitEncounter = new Encounter();
+		Provider provider = new Provider();
+		EncounterRole role = new EncounterRole();
 
 		// Set patient of the visit
 		visitInformation.setPatient(patient);
@@ -197,8 +201,8 @@ public abstract class DocumentProcessorImpl implements DocumentProcessor {
 		{
 			// TODO: Figure out where to stuff aut.getTime() .
 			// This element represents the time that the author started participating in the creation of the clinical document .. Is it important?
-			Provider provider = this.m_assignedEntityProcessorUtil.processProvider(aut.getAssignedAuthor());
-			EncounterRole role = this.m_openmrsMetadataUtil.getOrCreateEncounterRole(aut.getTypeCode());
+			provider = this.m_assignedEntityProcessorUtil.processProvider(aut.getAssignedAuthor());
+			role = this.m_openmrsMetadataUtil.getOrCreateEncounterRole(aut.getTypeCode());
 			visitEncounter.addProvider(role, provider);
 			
 			// Assign this author as the creator or updater
@@ -257,8 +261,8 @@ public abstract class DocumentProcessorImpl implements DocumentProcessor {
 			// Add performers with their function this is used when the provider is referenced elsewhere in the document
 			for(Performer1 prf : serviceEvent.getPerformer())
 			{
-				Provider provider = this.m_assignedEntityProcessorUtil.processProvider(prf.getAssignedEntity());
-				EncounterRole role = this.m_openmrsMetadataUtil.getOrCreateEncounterRole(prf.getFunctionCode());
+				provider = this.m_assignedEntityProcessorUtil.processProvider(prf.getAssignedEntity());
+				role = this.m_openmrsMetadataUtil.getOrCreateEncounterRole(prf.getFunctionCode());
 				visitEncounter.addProvider(role, provider);
 			}
 		}
@@ -327,8 +331,8 @@ public abstract class DocumentProcessorImpl implements DocumentProcessor {
 				throw new NotImplementedException("OpenSHR cannot store informants of type related persons .. yet");
 			else
 			{
-				Provider provider = this.m_assignedEntityProcessorUtil.processProvider(inf.getInformantChoiceIfAssignedEntity());
-				EncounterRole role = this.m_openmrsMetadataUtil.getOrCreateEncounterRole(inf.getTypeCode());
+				provider = this.m_assignedEntityProcessorUtil.processProvider(inf.getInformantChoiceIfAssignedEntity());
+				role = this.m_openmrsMetadataUtil.getOrCreateEncounterRole(inf.getTypeCode());
 				visitEncounter.addProvider(role, provider);
 			}
 		}
@@ -339,8 +343,8 @@ public abstract class DocumentProcessorImpl implements DocumentProcessor {
 		if(doc.getLegalAuthenticator() != null)
 		{
 			// TODO: Where to store signature code? Or is it enough that this data would be stored in the provenance with the document?
-			Provider provider = this.m_assignedEntityProcessorUtil.processProvider(doc.getLegalAuthenticator().getAssignedEntity());
-			EncounterRole role = this.m_openmrsMetadataUtil.getOrCreateEncounterRole(doc.getLegalAuthenticator().getTypeCode());
+			provider = this.m_assignedEntityProcessorUtil.processProvider(doc.getLegalAuthenticator().getAssignedEntity());
+			role = this.m_openmrsMetadataUtil.getOrCreateEncounterRole(doc.getLegalAuthenticator().getTypeCode());
 			visitEncounter.addProvider(role, provider);
 		}
 
@@ -348,8 +352,8 @@ public abstract class DocumentProcessorImpl implements DocumentProcessor {
 		if(doc.getDataEnterer() != null)
 		{
 			// TODO: Where to store the time the data was entered?
-			Provider provider = this.m_assignedEntityProcessorUtil.processProvider(doc.getDataEnterer().getAssignedEntity());
-			EncounterRole role = this.m_openmrsMetadataUtil.getOrCreateEncounterRole(doc.getDataEnterer().getTypeCode());
+			provider = this.m_assignedEntityProcessorUtil.processProvider(doc.getDataEnterer().getAssignedEntity());
+			role = this.m_openmrsMetadataUtil.getOrCreateEncounterRole(doc.getDataEnterer().getTypeCode());
 			visitEncounter.addProvider(role, provider);
 		}
 
@@ -377,14 +381,26 @@ public abstract class DocumentProcessorImpl implements DocumentProcessor {
 		}
 		visitInformation.setVisitType(this.m_openmrsMetadataUtil.getVisitType(visitTypeName));
 
-		// Add attributes to the visit encounter
-		visitEncounter.setPatient(visitInformation.getPatient());
+		Encounter createdEncounter = getLastCreatedEncounterForPatient(visitInformation.getPatient());
+
+		if (createdEncounter != null) {
+			createdEncounter.addProvider(role,provider);
+			visitEncounter = createdEncounter;
+			if (!checkEncounterDateIsBetweenVisitTimes(visitEncounter.getEncounterDatetime(), visitInformation)) {
+				Date encounterDate = DateUtils.addMinutes(visitInformation.getStopDatetime(), -1);
+				visitEncounter.setEncounterDatetime(encounterDate);
+			}
+		} else {
+			// Add attributes to the visit encounter
+			visitEncounter.setPatient(visitInformation.getPatient());
+			visitEncounter.setDateCreated(visitInformation.getDateCreated());
+			visitEncounter.setLocation(visitInformation.getLocation());
+			visitEncounter.setEncounterDatetime(visitInformation.getStartDatetime());
+			visitEncounter.setDateCreated(visitInformation.getDateCreated());
+			visitEncounter.setEncounterType(this.m_openmrsMetadataUtil.getOrCreateEncounterType(doc.getCode()));
+		}
+
 		visitEncounter.setVisit(visitInformation);
-		visitEncounter.setDateCreated(visitInformation.getDateCreated());
-		visitEncounter.setLocation(visitInformation.getLocation());
-		visitEncounter.setEncounterDatetime(visitInformation.getStartDatetime());
-		visitEncounter.setDateCreated(visitInformation.getDateCreated());
-		visitEncounter.setEncounterType(this.m_openmrsMetadataUtil.getOrCreateEncounterType(doc.getCode()));
 		visitEncounter = Context.getEncounterService().saveEncounter(visitEncounter);
 		
 		// Add encounters
@@ -394,6 +410,20 @@ public abstract class DocumentProcessorImpl implements DocumentProcessor {
 		visitInformation = Context.getVisitService().saveVisit(visitInformation);
 		
 		return visitInformation;
+	}
+
+
+	private Encounter getLastCreatedEncounterForPatient(Patient patient) {
+		List<Encounter> encounterList = Context.getEncounterService().getEncounters(patient);
+
+		if(encounterList.size() != 0)
+			return encounterList.get(encounterList.size() - 1);
+
+		return null;
+	}
+
+	private boolean checkEncounterDateIsBetweenVisitTimes(Date visitEncounterDate, Visit visitInfomrmation) {
+		return visitEncounterDate.after(visitInfomrmation.getStartDatetime()) && visitEncounterDate.before(visitInfomrmation.getStopDatetime());
 	}
 
 	/**

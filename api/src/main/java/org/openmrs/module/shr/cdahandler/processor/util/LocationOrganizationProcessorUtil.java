@@ -121,7 +121,12 @@ public final class LocationOrganizationProcessorUtil {
 	 */
 	public Location getOrganizationByExternalId(String id) throws DocumentImportException
 	{
-		
+
+		Integer locationId = Integer.valueOf(id.substring(0,id.indexOf("^")));
+		Location locationById = Context.getLocationService().getLocation(locationId);
+		if(locationById!=null)
+			return locationById;
+
 		// TODO: This is an organization not a location so we need to get all locations belonging to the organization
 		// TODO: For now this is stored just as a location with an externalId tag
 		// HACK: The function that does this natively in OpenMRS is missing from 1.9 and is available in 1.10
@@ -131,6 +136,7 @@ public final class LocationOrganizationProcessorUtil {
 			if(locAttributes.size() == 1 && locAttributes.get(0).getValueReference().equals(id)) 
 				return loc; 
 		}
+
 		return  null;
 	}
 	/**

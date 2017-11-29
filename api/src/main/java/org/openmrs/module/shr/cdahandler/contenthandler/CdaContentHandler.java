@@ -103,7 +103,7 @@ public class CdaContentHandler implements ContentHandler {
 	 */
 	@Override
 	@Transactional(rollbackFor = ContentHandlerException.class)
-	public Encounter saveContent(Patient patient, Map<EncounterRole, Set<Provider>> providerRole, EncounterType encounterType, Content content) throws ContentHandlerException {
+	public Encounter saveContent(Patient patient, Map<EncounterRole, Set<Provider>> providerRole, EncounterType encounterType, Content content, Encounter encounter) throws ContentHandlerException {
 		
 		// TODO: Validate / add provider data to the header
 		CdaImportService importService = Context.getService(CdaImportService.class);
