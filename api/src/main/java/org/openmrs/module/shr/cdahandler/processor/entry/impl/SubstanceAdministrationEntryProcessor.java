@@ -1,5 +1,6 @@
 package org.openmrs.module.shr.cdahandler.processor.entry.impl;
 
+import ca.uhn.hl7v2.model.v25.segment.CON_;
 import org.marc.everest.datatypes.BL;
 import org.marc.everest.datatypes.ST;
 import org.marc.everest.datatypes.doc.StructDocNode;
@@ -32,6 +33,10 @@ import org.openmrs.module.shr.cdahandler.exception.ValidationIssueCollection;
 import org.openmrs.module.shr.cdahandler.obs.ExtendedObs;
 import org.openmrs.module.shr.cdahandler.processor.util.AssignedEntityProcessorUtil;
 import org.openmrs.util.OpenmrsConstants;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * A processor that can interpret SubstanceAdministrations
@@ -177,8 +182,18 @@ public abstract class SubstanceAdministrationEntryProcessor extends EntryProcess
 			StructDocNode textNode = parentSection.getText().findNodeById(administration.getText().getReference().getValue());
 			if(textNode != null)
 			{
-				
+				Obs observation = new Obs();
+				observation.setPerson(medicationHistoryObs.getPerson());
+				observation.setEncounter(medicationHistoryObs.getEncounter());
+				observation.setObsDatetime(medicationHistoryObs.getObsDatetime());
+				observation.setLocation(medicationHistoryObs.getLocation());
+
 				String textStr = textNode.toPlainString();
+
+				this.m_dataUtil.processObsData(textStr, observation);
+
+				Context.getObsService().saveObs(observation,null);
+
 				if(textStr.length() > 254)
 					textStr = textStr.substring(0, 254);
 				medicationHistoryObs.setComment(textStr);
@@ -319,10 +334,4 @@ public abstract class SubstanceAdministrationEntryProcessor extends EntryProcess
 		return medicationHistoryObs;
     }
 
-	
-
-
-
-	
-	
 }

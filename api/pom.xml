@@ -200,6 +200,13 @@
 		</plugins>
 	</build>
 
+		<repositories>
+			<repository>
+				<id>marc-te-main</id>
+				<url>http://te.marc-hi.ca/mvn</url>
+			</repository>
+		</repositories>
+
 	<pluginRepositories>
 		<pluginRepository>
 			<snapshots>

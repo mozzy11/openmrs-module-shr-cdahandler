@@ -262,7 +262,8 @@ public abstract class DocumentProcessorImpl implements DocumentProcessor {
 			for(Performer1 prf : serviceEvent.getPerformer())
 			{
 				provider = this.m_assignedEntityProcessorUtil.processProvider(prf.getAssignedEntity());
-				role = this.m_openmrsMetadataUtil.getOrCreateEncounterRole(prf.getFunctionCode());
+				if(prf.getFunctionCode().getCode() != null)
+					role = this.m_openmrsMetadataUtil.getOrCreateEncounterRole(prf.getFunctionCode());
 				visitEncounter.addProvider(role, provider);
 			}
 		}

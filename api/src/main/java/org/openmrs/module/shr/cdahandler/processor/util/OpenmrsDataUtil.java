@@ -4,6 +4,8 @@ import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -426,4 +428,38 @@ public final class OpenmrsDataUtil {
 			res.setValueNumeric(((BigDecimal) value).doubleValue());
 		return res;
 		}
+
+
+	private void setObsValue(String valueText, Obs medicationHistoryObs) {
+		String value = valueText.substring(valueText.indexOf(" ") + 1);
+
+		if (valueText.contains("value-coded")) {
+			Integer conceptId = Integer.valueOf(value.trim());
+			Concept concept = Context.getConceptService().getConcept(conceptId);
+			medicationHistoryObs.setValueCoded(concept);
+		} else if (valueText.contains("value numeric")) {
+			medicationHistoryObs.setValueNumeric(Double.valueOf(value));
+		} else if (valueText.contains("value-datetime")) {
+			SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+			try {
+				Date date = simpleDateFormat.parse(value);
+				medicationHistoryObs.setValueDatetime(date);
+			} catch(ParseException e) {
+				e.getMessage();
+			}
+		} else if (valueText.contains("value-text")) {
+			medicationHistoryObs.setValueText(value);
+		}
+	}
+
+	public void processObsData(String textStr, Obs observation) {
+		String obs[] = textStr.split(";");
+		String obsData[] = obs[obs.length-1].split("/");
+		Integer conceptId = Integer.valueOf(obsData[0].trim());
+
+		Concept concept = Context.getConceptService().getConcept(conceptId);
+		observation.setConcept(concept);
+		setObsValue(obsData[1], observation);
+	}
+
 }
