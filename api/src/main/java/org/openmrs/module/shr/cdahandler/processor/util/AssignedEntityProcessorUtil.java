@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 
+import org.apache.commons.lang.StringUtils;
 import org.marc.everest.datatypes.AD;
 import org.marc.everest.datatypes.II;
 import org.marc.everest.datatypes.TEL;
@@ -241,7 +242,7 @@ public final class AssignedEntityProcessorUtil {
 		// Anyways, for now represent in the standard ITI guidance for II data type
         String id = this.m_datatypeUtil.emptyIdString();
         String epidRoot = this.m_configuration.getEpidRoot();
-        if (!epidRoot.equals("") && !epidRoot.isEmpty()) {
+        if (StringUtils.isNotBlank(epidRoot)) {
             Iterator res = assignedEntity.getId().iterator();
 
             while(res.hasNext()) {

@@ -121,13 +121,11 @@ public final class LocationOrganizationProcessorUtil {
 	 */
 	public Location getOrganizationByExternalId(String id) throws DocumentImportException
 	{
-		try {
+		if (id.contains("^")) {
 			Integer locationId = Integer.valueOf(id.substring(0, id.indexOf("^")));
 			Location locationById = Context.getLocationService().getLocation(locationId);
 			if (locationById != null)
 				return locationById;
-		} catch (StringIndexOutOfBoundsException ex) {
-            //if id do not contains "^" it perhaps is UUID
 		}
 
 		Location locationByUUid = Context.getLocationService().getLocationByUuid(id);
