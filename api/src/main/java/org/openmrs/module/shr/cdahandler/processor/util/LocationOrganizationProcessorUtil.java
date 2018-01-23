@@ -127,7 +127,7 @@ public final class LocationOrganizationProcessorUtil {
 			if (locationById != null)
 				return locationById;
 		} catch (StringIndexOutOfBoundsException ex) {
-            throw new DocumentImportException("No data specified for location id");
+            //if id do not contains "^" it perhaps is UUID
 		}
 
 		Location locationByUUid = Context.getLocationService().getLocationByUuid(id);
