@@ -204,7 +204,7 @@ public final class PatientRoleProcessorUtil {
 			if(pid.getLocation() == null)
 				pid.setLocation(Context.getLocationService().getDefaultLocation());
 			
-			pid.setPreferred(id.getRoot().equals(this.m_configuration.getEcidRoot()));
+			pid.setPreferred(id.getRoot().equals(this.m_configuration.getEcidRoot()) || id.getRoot().equals("ECID"));
 			res.addIdentifier(pid);
 		}
 		

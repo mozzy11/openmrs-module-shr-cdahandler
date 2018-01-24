@@ -437,7 +437,7 @@ public final class OpenmrsDataUtil {
 			Integer conceptId = Integer.valueOf(value.trim());
 			Concept concept = Context.getConceptService().getConcept(conceptId);
 			medicationHistoryObs.setValueCoded(concept);
-		} else if (valueText.contains("value numeric")) {
+		} else if (valueText.contains("value-numeric")) {
 			medicationHistoryObs.setValueNumeric(Double.valueOf(value));
 		} else if (valueText.contains("value-datetime")) {
 			SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");

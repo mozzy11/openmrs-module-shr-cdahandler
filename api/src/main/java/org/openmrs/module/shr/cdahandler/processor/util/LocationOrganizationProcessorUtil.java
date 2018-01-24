@@ -121,11 +121,17 @@ public final class LocationOrganizationProcessorUtil {
 	 */
 	public Location getOrganizationByExternalId(String id) throws DocumentImportException
 	{
+		if (id.contains("^")) {
+			Integer locationId = Integer.valueOf(id.substring(0, id.indexOf("^")));
+			Location locationById = Context.getLocationService().getLocation(locationId);
+			if (locationById != null)
+				return locationById;
+		}
 
-		Integer locationId = Integer.valueOf(id.substring(0,id.indexOf("^")));
-		Location locationById = Context.getLocationService().getLocation(locationId);
-		if(locationById!=null)
-			return locationById;
+		Location locationByUUid = Context.getLocationService().getLocationByUuid(id);
+		if (locationByUUid != null) {
+			return locationByUUid;
+		}
 
 		// TODO: This is an organization not a location so we need to get all locations belonging to the organization
 		// TODO: For now this is stored just as a location with an externalId tag

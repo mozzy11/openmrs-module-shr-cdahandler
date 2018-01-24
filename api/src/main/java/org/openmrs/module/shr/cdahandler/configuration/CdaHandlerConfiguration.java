@@ -58,12 +58,12 @@ public final class CdaHandlerConfiguration {
     private final Boolean m_defaultAutoCreatePersons = true;
     private final Boolean m_defaultValidateInstances = true;
     private final Boolean m_defaultUpdateExisting = false;
-    private final String m_defaultEpidRoot = "";
+    private final String m_defaultEpidRoot = "1.2.3.4.5.10";
     private final String m_defaultEcidRoot = "";
     private final String m_defaultShrRoot = "1.2.3.4.5";
     private final Boolean m_defaultAutoCreateUsers = true;
     
-    private String m_idFormat = "%2$s^^^&%1$s&ISO";
+    private String m_idFormat = "%2$s";
     
     private Map<String, Object> m_cachedProperties = new HashMap<String, Object>();
     // Singleton instance

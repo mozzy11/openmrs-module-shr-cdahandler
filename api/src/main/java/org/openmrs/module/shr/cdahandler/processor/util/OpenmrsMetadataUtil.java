@@ -206,7 +206,7 @@ public class OpenmrsMetadataUtil {
 		
 		EncounterType encounterType = null;
 		for(EncounterType type : Context.getEncounterService().getAllEncounterTypes())
-			if(type.getDescription().equals(codeKey))
+			if(type.getDescription().equals(codeKey) || type.getName().equals(codeKey))
 				encounterType = type;
 				
 		if(encounterType == null && this.m_configuration.getAutoCreateMetaData()) {

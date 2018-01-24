@@ -1,9 +1,11 @@
 package org.openmrs.module.shr.cdahandler.processor.util;
 
+import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 
+import org.apache.commons.lang.StringUtils;
 import org.marc.everest.datatypes.AD;
 import org.marc.everest.datatypes.II;
 import org.marc.everest.datatypes.TEL;
@@ -238,7 +240,20 @@ public final class AssignedEntityProcessorUtil {
 		// TODO: How to add this like the ECID/EPID identifiers in the current SHR
 		// ie. root becomes an attribute and the extension becomes the value
 		// Anyways, for now represent in the standard ITI guidance for II data type
-		String id = this.m_datatypeUtil.formatIdentifier(assignedEntity.getId().get(0));
+        String id = this.m_datatypeUtil.emptyIdString();
+        String epidRoot = this.m_configuration.getEpidRoot();
+        if (StringUtils.isNotBlank(epidRoot)) {
+            Iterator res = assignedEntity.getId().iterator();
+
+            while(res.hasNext()) {
+                II autId = (II)res.next();
+                if (autId.getRoot().equals(this.m_configuration.getEpidRoot())) {
+                    id = this.m_datatypeUtil.formatIdentifier(autId);
+                }
+            }
+        } else {
+            id = this.m_datatypeUtil.formatIdentifier(assignedEntity.getId().get(0));
+        }
 		
 		Provider res = null;
 		
