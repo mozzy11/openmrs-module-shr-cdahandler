@@ -1,6 +1,5 @@
 package org.openmrs.module.shr.cdahandler.processor.entry.impl;
 
-import ca.uhn.hl7v2.model.v25.segment.CON_;
 import org.marc.everest.datatypes.BL;
 import org.marc.everest.datatypes.ST;
 import org.marc.everest.datatypes.doc.StructDocNode;
@@ -34,15 +33,12 @@ import org.openmrs.module.shr.cdahandler.obs.ExtendedObs;
 import org.openmrs.module.shr.cdahandler.processor.util.AssignedEntityProcessorUtil;
 import org.openmrs.util.OpenmrsConstants;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
 /**
  * A processor that can interpret SubstanceAdministrations
  */
 public abstract class SubstanceAdministrationEntryProcessor extends EntryProcessorImpl {
 
+	private static final String OBJECT_CHANGE_MESSAGE = "Modified via CDA module";
 	protected AssignedEntityProcessorUtil m_providerUtil = AssignedEntityProcessorUtil.getInstance();
 
 	/**
@@ -176,12 +172,10 @@ public abstract class SubstanceAdministrationEntryProcessor extends EntryProcess
 		Section parentSection = super.getSection();
 
 		// Text and comments
-		if(administration.getText() != null && administration.getText().getReference() != null)
-		{
+		if(administration.getText() != null && administration.getText().getReference() != null) {
 		
 			StructDocNode textNode = parentSection.getText().findNodeById(administration.getText().getReference().getValue());
-			if(textNode != null)
-			{
+			if (textNode != null) {
 				Obs observation = new Obs();
 				observation.setPerson(medicationHistoryObs.getPerson());
 				observation.setEncounter(medicationHistoryObs.getEncounter());
@@ -192,10 +186,15 @@ public abstract class SubstanceAdministrationEntryProcessor extends EntryProcess
 
 				this.m_dataUtil.processObsData(textStr, observation);
 
-				Context.getObsService().saveObs(observation,null);
+				if (observation.getId() == null) {
+					Context.getObsService().saveObs(observation, null);
+				} else {
+					Context.getObsService().saveObs(observation, OBJECT_CHANGE_MESSAGE);
+				}
 
-				if(textStr.length() > 254)
+				if (textStr.length() > 254) {
 					textStr = textStr.substring(0, 254);
+				}
 				medicationHistoryObs.setComment(textStr);
 			}
 		}

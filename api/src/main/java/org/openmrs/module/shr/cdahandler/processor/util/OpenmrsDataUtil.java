@@ -51,7 +51,6 @@ import org.openmrs.module.shr.cdahandler.configuration.CdaHandlerConfiguration;
 import org.openmrs.module.shr.cdahandler.exception.DocumentImportException;
 import org.openmrs.module.shr.cdahandler.obs.ExtendedObs;
 import org.openmrs.obs.ComplexData;
-import org.openmrs.validator.ObsValidator;
 
 /**
  * Data utilities for OpenMRS
@@ -449,7 +448,29 @@ public final class OpenmrsDataUtil {
 			}
 		} else if (valueText.contains("value-text")) {
 			medicationHistoryObs.setValueText(value);
-		}
+		} else if (valueText.contains("group-members")) {
+			//Before we can crate obs group we have to save new Obs
+			medicationHistoryObs.setValueText("This observation represent obs group");	//this is added to avoid error.noValue
+			Context.getObsService().saveObs(medicationHistoryObs,null);
+		    String[] members = value.split(" ");
+		    for (String accessionNumber : members) {
+				Obs obs = getMatchedObs(accessionNumber);
+				if (obs != null) {
+					medicationHistoryObs.addGroupMember(obs);
+				}
+            }
+			medicationHistoryObs.setValueText(null); //return to the default value
+        }
+	}
+
+	private Obs getMatchedObs(String accessionNumber) {
+
+		List<Obs> listOfCandidates = Context.getObsService().getObservations(
+				null, null, null, null, null, null,
+				null, null, null, null, null,
+				true, accessionNumber);
+
+		return listOfCandidates.isEmpty() ? null : listOfCandidates.get(0);
 	}
 
 	public void processObsData(String textStr, Obs observation) {
