@@ -476,11 +476,19 @@ public final class OpenmrsDataUtil {
 	public void processObsData(String textStr, Obs observation) {
 		String obs[] = textStr.split(";");
 		String obsData[] = obs[obs.length-1].split("/");
-		Integer conceptId = Integer.valueOf(obsData[0].trim());
 
+		Integer conceptId = Integer.valueOf(obsData[0].trim());
 		Concept concept = Context.getConceptService().getConcept(conceptId);
 		observation.setConcept(concept);
+
 		setObsValue(obsData[1], observation);
+
+		if (obsData.length > 2) {
+			if (obsData[2].length() > 254) {
+				obsData[2] = obsData[2].substring(0, 254);
+			}
+			observation.setComment(obsData[2]);
+		}
 	}
 
 }

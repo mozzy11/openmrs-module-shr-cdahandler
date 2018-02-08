@@ -191,11 +191,6 @@ public abstract class SubstanceAdministrationEntryProcessor extends EntryProcess
 				} else {
 					Context.getObsService().saveObs(observation, OBJECT_CHANGE_MESSAGE);
 				}
-
-				if (textStr.length() > 254) {
-					textStr = textStr.substring(0, 254);
-				}
-				medicationHistoryObs.setComment(textStr);
 			}
 		}
 		
