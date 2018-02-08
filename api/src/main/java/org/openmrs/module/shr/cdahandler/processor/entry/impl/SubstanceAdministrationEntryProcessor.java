@@ -136,11 +136,8 @@ public abstract class SubstanceAdministrationEntryProcessor extends EntryProcess
 		
 		medicationHistoryObs.setEncounter(encounterInfo);
 		medicationHistoryObs.setDateCreated(encounterInfo.getDateCreated());
-		super.setCreator(medicationHistoryObs, administration);				
+		super.setCreator(medicationHistoryObs, administration);
 
-		if(administration.getId() != null)
-			medicationHistoryObs.setAccessionNumber(this.m_datatypeUtil.formatIdentifier(administration.getId().get(0)));
-		
 		// Procedure?
 		if(administration.getCode() != null && !administration.getCode().isNull() && administration.getCode().getCode() != null)
 			this.m_dataUtil.addSubObservationValue(medicationHistoryObs, Context.getConceptService().getConcept(CdaHandlerConstants.CONCEPT_ID_PROCEDURE), administration.getCode());
@@ -181,6 +178,10 @@ public abstract class SubstanceAdministrationEntryProcessor extends EntryProcess
 				observation.setEncounter(medicationHistoryObs.getEncounter());
 				observation.setObsDatetime(medicationHistoryObs.getObsDatetime());
 				observation.setLocation(medicationHistoryObs.getLocation());
+
+				if (administration.getId() != null) {
+					observation.setAccessionNumber(this.m_datatypeUtil.formatIdentifier(administration.getId().get(0)));
+				}
 
 				String textStr = textNode.toPlainString();
 
