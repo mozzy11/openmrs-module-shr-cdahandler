@@ -3,12 +3,11 @@ package org.openmrs.module.shr.cdahandler.processor.document.impl;
 import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
 import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.Iterator;
 import java.util.UUID;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -146,26 +145,14 @@ public abstract class DocumentProcessorImpl implements DocumentProcessor {
 		if(doc.getRecordTarget().size() != 1)
 			throw new DocumentImportException("Can only handle documents with exactly one patient");
 		Patient patient = this.m_patientRoleProcessorUtil.processPatient(doc.getRecordTarget().get(0).getPatientRole());
-		
+
 		// Look up the visit information
-		Visit visitInformation = this.m_openmrsDataUtil.getVisitById(doc.getId(), patient); 
-				
-		if(visitInformation == null)
-			visitInformation = new Visit();
-		else if(this.m_configuration.getUpdateExisting())
-		{
-			visitInformation.setDateChanged(doc.getEffectiveTime().getDateValue().getTime());
-		}
-		else
-			throw new DocumentImportException(String.format("Cannot persist a duplicate document %s!", doc.getId()));
+		Visit visitInformation = findOrCreateVisit(doc, patient);
 
 		// Create an encounter for the of the document
 		Encounter visitEncounter = new Encounter();
 		Provider provider = new Provider();
 		EncounterRole role = new EncounterRole();
-
-		// Set patient of the visit
-		visitInformation.setPatient(patient);
 		
 		// Are we explicitly appending/replacing data?
 		for(RelatedDocument dr : doc.getRelatedDocument())
@@ -183,7 +170,7 @@ public abstract class DocumentProcessorImpl implements DocumentProcessor {
 					log.warn(String.format("Can't find the visit identified as %s to be associated", FormatterUtil.toWireFormat(dr.getParentDocument().getId())));
 				else if(dr.getTypeCode().getCode().equals(x_ActRelationshipDocument.RPLC)) // Replacement of
 				{
-					this.voidVisitData(oldVisit, doc.getId());
+					this.voidVisitData(oldVisit, getVisitId(doc.getId()));
 				}
 				else if(dr.getTypeCode().getCode().equals(x_ActRelationshipDocument.APND))
 				{
@@ -217,20 +204,6 @@ public abstract class DocumentProcessorImpl implements DocumentProcessor {
 					visitInformation.setCreator(createdOrUpdatedBy);
 			}
 			
-		}
-
-		// TODO: Authorization & Participants
-		// These are kind of visit attributes 
-		//	Authorization = The authority under which the operation/action was done
-		//	Participants = Spouses, fathers, etc. related to the record target
-		
-		// TODO: Confidentiality (discussion about privacy enforcement)
-		if(doc.getConfidentialityCode() != null && !doc.getConfidentialityCode().isNull())
-		{
-			VisitAttribute confidentiality = new VisitAttribute();
-			confidentiality.setAttributeType(this.m_openmrsMetadataUtil.getOrCreateVisitConfidentialityCodeAttributeType());
-			confidentiality.setValueReferenceInternal(this.m_datatypeProcessorUtil.formatSimpleCode(doc.getConfidentialityCode()));
-			visitInformation.addAttribute(confidentiality);
 		}
 		
 		// Custodian - Approximately the location where the event or original data is store
@@ -358,31 +331,8 @@ public abstract class DocumentProcessorImpl implements DocumentProcessor {
 			visitEncounter.addProvider(role, provider);
 		}
 
-		// ID? Some basic provenance data
-		if(doc.getId() != null && !doc.getId().isNull())
-		{
-			VisitAttribute provenance = new VisitAttribute();
-			provenance.setAttributeType(this.m_openmrsMetadataUtil.getOrCreateVisitExternalIdAttributeType());
-			provenance.setValueReferenceInternal(this.m_datatypeProcessorUtil.formatIdentifier(doc.getId()));
-			visitInformation.addAttribute(provenance);
-		}
-
-		// Type of visit
-		String visitTypeName = this.getTemplateName();
-		if(visitTypeName == null)
-		{
-			if(doc.getCode() != null && !doc.getCode().isNull())
-			{
-				visitTypeName = doc.getCode().getDisplayName();
-				if(visitTypeName == null)
-					visitTypeName = doc.getCode().getCode();
-			}
-			else
-				visitTypeName = "UNKNOWN";
-		}
-		visitInformation.setVisitType(this.m_openmrsMetadataUtil.getVisitType(visitTypeName));
-
-		Encounter createdEncounter = getLastCreatedEncounterForPatient(visitInformation.getPatient());
+		String encounterUuid = getEncounterUuid(doc.getId());
+		Encounter createdEncounter = getEncounterByUuid(encounterUuid);
 
 		if (createdEncounter != null) {
 			createdEncounter.addProvider(role,provider);
@@ -399,28 +349,98 @@ public abstract class DocumentProcessorImpl implements DocumentProcessor {
 			visitEncounter.setEncounterDatetime(visitInformation.getStartDatetime());
 			visitEncounter.setDateCreated(visitInformation.getDateCreated());
 			visitEncounter.setEncounterType(this.m_openmrsMetadataUtil.getOrCreateEncounterType(doc.getCode()));
+			visitEncounter.setUuid(encounterUuid);
 		}
 
 		visitEncounter.setVisit(visitInformation);
 		visitEncounter = Context.getEncounterService().saveEncounter(visitEncounter);
 		
 		// Add encounters
-		Set<Encounter> encounters = new HashSet<Encounter>();
-		encounters.add(visitEncounter);
-		visitInformation.setEncounters(encounters);
+		visitInformation.addEncounter(visitEncounter);
 		visitInformation = Context.getVisitService().saveVisit(visitInformation);
 		
 		return visitInformation;
 	}
 
+	private II getVisitId(II id) {
+		String visitId = this.m_datatypeProcessorUtil.formatIdentifier(id);
+		if (visitId != null && visitId.contains("/")) {
+			visitId = visitId.split("/")[0];
+		}
+		return new II("visit", visitId);
+	}
 
-	private Encounter getLastCreatedEncounterForPatient(Patient patient) {
-		List<Encounter> encounterList = Context.getEncounterService().getEncounters(patient);
+	private String getEncounterUuid(II id) {
+		String encounterUuid = this.m_datatypeProcessorUtil.formatIdentifier(id);
+		if (encounterUuid != null && encounterUuid.contains("/")) {
+			String[] ids = encounterUuid.split("/");
+			if (ids.length > 1) {
+				encounterUuid = ids[1];
+			}
+		} else {
+			encounterUuid = UUID.randomUUID().toString();
+		}
+		return encounterUuid;
+	}
 
-		if(encounterList.size() != 0)
-			return encounterList.get(encounterList.size() - 1);
+	private Visit findOrCreateVisit(ClinicalDocument doc, Patient patient) throws DocumentImportException {
+		II visitId = getVisitId(doc.getId());
+		Visit visit = this.m_openmrsDataUtil.getVisitById(visitId, patient);
+		if (visit == null) {
+			visit = new Visit();
+			visit.setPatient(patient);
+			addVisitAttribute(visit, doc);
+		} else if (this.m_configuration.getUpdateExisting()) {
+			visit.setDateChanged(doc.getEffectiveTime().getDateValue().getTime());
+		} else {
+			throw new DocumentImportException(String.format("Cannot persist a duplicate document %s!", doc.getId()));
+		}
 
-		return null;
+		setVisitType(visit, doc);
+
+		return visit;
+	}
+
+	private void addVisitAttribute(Visit visit, ClinicalDocument doc) throws DocumentImportException {
+		// TODO: Authorization & Participants
+		// These are kind of visit attributes
+		//	Authorization = The authority under which the operation/action was done
+		//	Participants = Spouses, fathers, etc. related to the record target
+		II visitId = getVisitId(doc.getId());
+		String visitIdentifier = this.m_datatypeProcessorUtil.formatIdentifier(visitId);
+		if (StringUtils.isNotBlank(visitIdentifier)) {
+			VisitAttribute provenance = new VisitAttribute();
+			provenance.setAttributeType(this.m_openmrsMetadataUtil.getOrCreateVisitExternalIdAttributeType());
+			provenance.setValueReferenceInternal(visitIdentifier);
+			visit.addAttribute(provenance);
+		}
+		// TODO: Confidentiality (discussion about privacy enforcement)
+		if (doc.getConfidentialityCode() != null && !doc.getConfidentialityCode().isNull()) {
+			VisitAttribute confidentiality = new VisitAttribute();
+			confidentiality.setAttributeType(this.m_openmrsMetadataUtil.getOrCreateVisitConfidentialityCodeAttributeType());
+			confidentiality.setValueReferenceInternal(this.m_datatypeProcessorUtil.formatSimpleCode(doc.getConfidentialityCode()));
+			visit.addAttribute(confidentiality);
+		}
+	}
+
+	private void setVisitType(Visit visit, ClinicalDocument doc) throws DocumentImportException {
+		String visitTypeName = this.getTemplateName();
+		if (visitTypeName == null) {
+			if (doc.getCode() != null && !doc.getCode().isNull()) {
+				visitTypeName = doc.getCode().getDisplayName();
+				if (visitTypeName == null) {
+					visitTypeName = doc.getCode().getCode();
+				}
+			} else {
+				visitTypeName = "UNKNOWN";
+			}
+		}
+
+		visit.setVisitType(this.m_openmrsMetadataUtil.getVisitType(visitTypeName));
+	}
+
+	private Encounter getEncounterByUuid(String uuid) {
+		return Context.getEncounterService().getEncounterByUuid(uuid);
 	}
 
 	private boolean checkEncounterDateIsBetweenVisitTimes(Date visitEncounterDate, Visit visitInfomrmation) {
@@ -479,7 +499,7 @@ public abstract class DocumentProcessorImpl implements DocumentProcessor {
 		// Get the body
 		NonXMLBody bodyChoiceIfNonXMLBody = doc.getComponent().getBodyChoiceIfNonXMLBody();
 		
-		Encounter binaryContentEncounter = visitInformation.getEncounters().iterator().next();
+		Encounter binaryContentEncounter =  getEncounterFromVisit(visitInformation, getEncounterUuid(doc.getId()));
 		
 		// Process contents
 		Obs binaryContentObs = new Obs();
@@ -513,7 +533,7 @@ public abstract class DocumentProcessorImpl implements DocumentProcessor {
 
 		StructuredBody structuredBody = doc.getComponent().getBodyChoiceIfStructuredBody();
 		SectionProcessorFactory factory = SectionProcessorFactory.getInstance();
-		Encounter visitEncounter = visitInformation.getEncounters().iterator().next();
+		Encounter visitEncounter = getEncounterFromVisit(visitInformation, getEncounterUuid(doc.getId()));
 
 		// Add visit to context
 		DocumentProcessorContext rootContext = new DocumentProcessorContext(doc, visitInformation, this);
@@ -544,6 +564,19 @@ public abstract class DocumentProcessorImpl implements DocumentProcessor {
 		
 		return visitInformation;
     }
+
+    private Encounter getEncounterFromVisit(Visit visit, String uuid) {
+		Encounter encounter = null;
+		Iterator<Encounter> iterator = visit.getEncounters().iterator();
+		while (iterator.hasNext()) {
+			encounter = iterator.next();
+			if (encounter.getUuid().equals(uuid)) {
+				break;
+			}
+		}
+
+		return encounter;
+	}
 
 	/**
 	 * Sets the context within which this processor runs

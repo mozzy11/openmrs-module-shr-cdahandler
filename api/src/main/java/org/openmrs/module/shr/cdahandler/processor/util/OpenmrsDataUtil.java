@@ -131,12 +131,13 @@ public final class OpenmrsDataUtil {
 	 */
 	public Visit getVisitById(II id, Patient patient) throws InvalidCustomValueException, DocumentImportException {
 		VisitAttributeType vat = this.m_conceptUtil.getOrCreateVisitExternalIdAttributeType();
-		for(Visit visit : Context.getVisitService().getActiveVisitsByPatient(patient))
-		{
-			for(VisitAttribute attr : visit.getAttributes())
-				if(attr.getAttributeType().equals(vat) &&
-					attr.getValue().equals(this.m_datatypeUtil.formatIdentifier(id)))
+		for (Visit visit : Context.getVisitService().getVisitsByPatient(patient)) {
+			for (VisitAttribute attr : visit.getAttributes()) {
+				if (attr.getAttributeType().equals(vat) &&
+						attr.getValue().equals(this.m_datatypeUtil.formatIdentifier(id))) {
 					return visit;
+				}
+			}
 		}
 		return null;
     }
