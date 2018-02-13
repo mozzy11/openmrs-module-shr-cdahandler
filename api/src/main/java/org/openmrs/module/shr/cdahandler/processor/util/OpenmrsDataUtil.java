@@ -452,15 +452,15 @@ public final class OpenmrsDataUtil {
 			//Before we can crate obs group we have to save new Obs
 			medicationHistoryObs.setValueText("This observation represent obs group");	//this is added to avoid error.noValue
 			Context.getObsService().saveObs(medicationHistoryObs,null);
-		    String[] members = value.split(" ");
-		    for (String accessionNumber : members) {
+			String[] members = value.split(" ");
+			for (String accessionNumber : members) {
 				Obs obs = getMatchedObs(accessionNumber);
 				if (obs != null) {
 					medicationHistoryObs.addGroupMember(obs);
 				}
-            }
+			}
 			medicationHistoryObs.setValueText(null); //return to the default value
-        }
+		}
 	}
 
 	private Obs getMatchedObs(String accessionNumber) {
