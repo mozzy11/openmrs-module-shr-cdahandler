@@ -335,6 +335,7 @@ public abstract class DocumentProcessorImpl implements DocumentProcessor {
 		Encounter createdEncounter = getEncounterByUuid(encounterUuid);
 
 		if (createdEncounter != null) {
+			voidPreviousObservations(createdEncounter);
 			createdEncounter.addProvider(role,provider);
 			visitEncounter = createdEncounter;
 			if (!checkEncounterDateIsBetweenVisitTimes(visitEncounter.getEncounterDatetime(), visitInformation)) {
@@ -360,6 +361,15 @@ public abstract class DocumentProcessorImpl implements DocumentProcessor {
 		visitInformation = Context.getVisitService().saveVisit(visitInformation);
 		
 		return visitInformation;
+	}
+
+	private void voidPreviousObservations(Encounter createdEncounter) {
+		for (Obs obs : createdEncounter.getAllObs(false)) {
+			//If obs is unstructured attachment skip
+			if (!obs.getConcept().getName().getName().contains("Unstructured Attachment")) {
+				Context.getObsService().voidObs(obs, "Auto update via CDA module");
+			}
+		}
 	}
 
 	private II getVisitId(II id) {

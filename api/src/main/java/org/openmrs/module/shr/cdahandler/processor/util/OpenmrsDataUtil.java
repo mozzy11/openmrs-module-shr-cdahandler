@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.marc.everest.datatypes.ANY;
@@ -33,6 +34,7 @@ import org.openmrs.Concept;
 import org.openmrs.ConceptNumeric;
 import org.openmrs.Drug;
 import org.openmrs.DrugOrder;
+import org.openmrs.Encounter;
 import org.openmrs.Obs;
 import org.openmrs.Order;
 import org.openmrs.Order.Urgency;
@@ -429,7 +431,6 @@ public final class OpenmrsDataUtil {
 		return res;
 		}
 
-
 	private void setObsValue(String valueText, Obs medicationHistoryObs) {
 		String value = valueText.substring(valueText.indexOf(" ") + 1);
 
@@ -452,26 +453,37 @@ public final class OpenmrsDataUtil {
 		} else if (valueText.contains("group-members")) {
 			//Before we can crate obs group we have to save new Obs
 			medicationHistoryObs.setValueText("This observation represent obs group");	//this is added to avoid error.noValue
-			Context.getObsService().saveObs(medicationHistoryObs,null);
+			medicationHistoryObs = Context.getObsService().saveObs(medicationHistoryObs,null);
 			String[] members = value.split(" ");
 			for (String accessionNumber : members) {
-				Obs obs = getMatchedObs(accessionNumber);
+				Obs obs = getMatchedObs(medicationHistoryObs.getEncounter(), accessionNumber);
 				if (obs != null) {
 					medicationHistoryObs.addGroupMember(obs);
 				}
 			}
-			medicationHistoryObs.setValueText(null); //return to the default value
+			medicationHistoryObs.setValueText(null); //return to the default value to avoid error.not.null
 		}
 	}
 
-	private Obs getMatchedObs(String accessionNumber) {
-
-		List<Obs> listOfCandidates = Context.getObsService().getObservations(
-				null, null, null, null, null, null,
-				null, null, null, null, null,
-				true, accessionNumber);
-
-		return listOfCandidates.isEmpty() ? null : listOfCandidates.get(0);
+	private Obs getMatchedObs(Encounter encounter, String accessionNumber) {
+		Obs observation = null;
+		for (Obs obs : encounter.getObs())
+		{
+			if (StringUtils.isNotBlank(obs.getAccessionNumber()) && obs.getAccessionNumber().equals(accessionNumber)) {
+				observation = obs;
+				break;
+			}
+		}
+		if (observation == null) {
+			List<Obs> listOfCandidates = Context.getObsService().getObservations(
+					null, null, null, null, null, null,
+					null, null, null, null, null,
+					false, accessionNumber);
+			if (!listOfCandidates.isEmpty()) {
+				observation = listOfCandidates.get(0);
+			}
+		}
+		return observation;
 	}
 
 	public void processObsData(String textStr, Obs observation) {
