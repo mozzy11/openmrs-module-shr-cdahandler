@@ -33,6 +33,8 @@ import org.openmrs.module.shr.cdahandler.obs.ExtendedObs;
 import org.openmrs.module.shr.cdahandler.processor.util.AssignedEntityProcessorUtil;
 import org.openmrs.util.OpenmrsConstants;
 
+import java.util.Date;
+
 /**
  * A processor that can interpret SubstanceAdministrations
  */
@@ -129,13 +131,22 @@ public abstract class SubstanceAdministrationEntryProcessor extends EntryProcess
 		medicationHistoryObs.setLocation(encounterInfo.getLocation());
 		
 		// Set mood code
-		medicationHistoryObs.setObsMood(this.m_conceptUtil.getOrCreateConcept(new CV<x_DocumentSubstanceMood>(administration.getMoodCode().getCode())));
+		medicationHistoryObs.setObsMood(this.m_conceptUtil.getOrCreateConcept(
+				new CV<x_DocumentSubstanceMood>(administration.getMoodCode().getCode())));
 		// Set the status of the obs
-		medicationHistoryObs.setObsStatus(this.m_conceptUtil.getOrCreateConcept(new CV<ActStatus>(administration.getStatusCode().getCode())));
-		medicationHistoryObs.setObsDatetime(encounterInfo.getEncounterDatetime());
-		
+		medicationHistoryObs.setObsStatus(this.m_conceptUtil.getOrCreateConcept(
+				new CV<ActStatus>(administration.getStatusCode().getCode())));
 		medicationHistoryObs.setEncounter(encounterInfo);
-		medicationHistoryObs.setDateCreated(encounterInfo.getDateCreated());
+
+		if (administration.getAuthor() != null && administration.getAuthor().size() > 0) {
+			Date obsDate = administration.getAuthor().get(0).getTime().getDateValue().getTime();
+			medicationHistoryObs.setObsDatetime(obsDate);
+			medicationHistoryObs.setDateCreated(obsDate);
+		} else {
+			medicationHistoryObs.setObsDatetime(encounterInfo.getEncounterDatetime());
+			medicationHistoryObs.setDateCreated(encounterInfo.getDateCreated());
+		}
+
 		super.setCreator(medicationHistoryObs, administration);
 
 		// Procedure?
@@ -177,6 +188,7 @@ public abstract class SubstanceAdministrationEntryProcessor extends EntryProcess
 				observation.setPerson(medicationHistoryObs.getPerson());
 				observation.setEncounter(medicationHistoryObs.getEncounter());
 				observation.setObsDatetime(medicationHistoryObs.getObsDatetime());
+				observation.setDateCreated(medicationHistoryObs.getDateCreated());
 				observation.setLocation(medicationHistoryObs.getLocation());
 
 				if (administration.getId() != null) {
