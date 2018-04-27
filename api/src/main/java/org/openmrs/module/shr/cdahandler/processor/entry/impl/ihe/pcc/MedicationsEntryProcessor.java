@@ -296,86 +296,16 @@ public class MedicationsEntryProcessor extends SubstanceAdministrationEntryProce
 	 * @throws DocumentImportException 
 	 */
 	@Override
-	protected BaseOpenmrsData processAdministrationAsObservation(SubstanceAdministration administration) throws DocumentImportException
-	{
+	protected BaseOpenmrsData processAdministrationAsObservation(SubstanceAdministration administration) throws DocumentImportException {
 		
 		// Canot process this
-		if(administration != null &&
-				administration.getCode() != null && 
-				"182904002".equals(administration.getCode().getCode()))
+		if (canProcessAdminstration(administration)) {
 			return null;
-		
-		ExtendedObs medicationHistoryObs = super.createSubstanceAdministrationObs(administration, Context.getConceptService().getConcept(CdaHandlerConstants.CONCEPT_ID_MEDICATION_HISTORY), Context.getConceptService().getConcept(CdaHandlerConstants.CONCEPT_ID_MEDICATION_DRUG));
-		
-		// Effective time(s)
-		for(Object eft : administration.getEffectiveTime())
-		{
-
-			// TODO: Is there a better way to represent these frequencies in oMRS than as serializations of the data types? Like a coded list?
-			if(eft instanceof IVL) // The effective range time
-			{
-
-				IVL<TS> eftIvl = (IVL<TS>)eft;
-				
-				// Set the original start/stop with precision on obs
-				if(eftIvl.getValue() != null && !eftIvl.getValue().isNull())
-				{
-					medicationHistoryObs.setObsDatetime(eftIvl.getValue().getDateValue().getTime());
-					medicationHistoryObs.setObsDatePrecision(eftIvl.getValue().getDateValuePrecision());
-				}
-				else if(eftIvl.isNull()) // Unknown date?
-					medicationHistoryObs.setObsDatePrecision(0);
-				else
-				{
-					if(eftIvl.getLow() != null && !eftIvl.getLow().isNull())
-					{
-						medicationHistoryObs.setObsStartDate(eftIvl.getLow().getDateValue().getTime());
-						if(medicationHistoryObs.getObsDatePrecision() > eftIvl.getLow().getDateValuePrecision())
-							medicationHistoryObs.setObsDatePrecision(eftIvl.getLow().getDateValuePrecision());
-					}
-					if(eftIvl.getHigh() != null && !eftIvl.getHigh().isNull())
-					{
-						medicationHistoryObs.setObsEndDate(eftIvl.getHigh().getDateValue().getTime());
-						if(medicationHistoryObs.getObsDatePrecision() > eftIvl.getHigh().getDateValuePrecision())
-							medicationHistoryObs.setObsDatePrecision(eftIvl.getHigh().getDateValuePrecision());
-					}
-				}
-				
-				// Start / stop via a bound ivl
-				IVL<TS> effectiveRange = eftIvl.toBoundIvl();
-				if(effectiveRange.getLow() != null && !effectiveRange.getLow().isNull())
-				{
-					this.m_dataUtil.addSubObservationValue(medicationHistoryObs, Context.getConceptService().getConcept(CdaHandlerConstants.CONCEPT_ID_MEDICATION_START_DATE), effectiveRange.getLow());
-				}
-				if(effectiveRange.getHigh() != null && !effectiveRange.getHigh().isNull())
-					this.m_dataUtil.addSubObservationValue(medicationHistoryObs, Context.getConceptService().getConcept(CdaHandlerConstants.CONCEPT_ID_MEDICATION_STOP_DATE), effectiveRange.getHigh());
-			}
-			else if(eft instanceof PIVL || eft instanceof EIVL || eft instanceof TS || eft.getClass().equals(SXCM.class)) // period
-			{
-				ANY timeValue = (ANY)eft;
-				if(eft.getClass().equals(SXCM.class))
-					timeValue = ((SXCM<TS>)eft).getValue();
-				Concept frequency = this.m_conceptUtil.getOrCreateFrequencyConcept((ANY)timeValue);
-				this.m_dataUtil.addSubObservationValue(medicationHistoryObs, Context.getConceptService().getConcept(CdaHandlerConstants.CONCEPT_ID_MEDICATION_FREQUENCY), frequency);
-			}
-			else
-				throw new DocumentPersistenceException(String.format("Cannot represent administration frequency of %s", FormatterUtil.createXsiTypeName(eft)));
 		}
 		
-		// Types of dosing?
-		if(this.m_datatypeUtil.hasTemplateId(administration, new II(CdaHandlerConstants.ENT_TEMPLATE_MEDICATIONS_SPLIT_DOSING)))
-			medicationHistoryObs.setComment("Split Dosing");
-		else if(this.m_datatypeUtil.hasTemplateId(administration, new II(CdaHandlerConstants.ENT_TEMPLATE_MEDICATIONS_CONDITIONAL_DOSING)))
-			medicationHistoryObs.setComment("Conditional Dosing");
-		else if(this.m_datatypeUtil.hasTemplateId(administration, new II(CdaHandlerConstants.ENT_TEMPLATE_MEDICATIONS_COMBINATION_DOSING)))
-			medicationHistoryObs.setComment("Combination Dosing");
-		else if(this.m_datatypeUtil.hasTemplateId(administration, new II(CdaHandlerConstants.ENT_TEMPLATE_MEDICATIONS_NORMAL_DOSING)))
-			medicationHistoryObs.setComment("Normal");
-		else if(this.m_datatypeUtil.hasTemplateId(administration, new II(CdaHandlerConstants.ENT_TEMPLATE_MEDICATIONS_TAPERED_DOSING)))
-			medicationHistoryObs.setComment("Tapered Dosing");
-		
-		// Medication history obs
-		medicationHistoryObs = (ExtendedObs)Context.getObsService().saveObs(medicationHistoryObs, null);
+		ExtendedObs medicationHistoryObs = super.createSubstanceAdministrationObs(administration,
+				Context.getConceptService().getConcept(CdaHandlerConstants.CONCEPT_ID_MEDICATION_HISTORY),
+				Context.getConceptService().getConcept(CdaHandlerConstants.CONCEPT_ID_MEDICATION_DRUG));
 
 		// Process entry relationships (these should be substance administrations) 
 		// Representing them as a flat heirarchy
@@ -383,6 +313,10 @@ public class MedicationsEntryProcessor extends SubstanceAdministrationEntryProce
 		super.processEntryRelationships(administration, childContext, SubstanceAdministration.class);
 		
 		return medicationHistoryObs;		
+	}
+
+	private boolean canProcessAdminstration(SubstanceAdministration administration) {
+		return administration != null && administration.getCode() != null && !"182904002".equals(administration.getCode().getCode());
 	}
 	
 	/**
