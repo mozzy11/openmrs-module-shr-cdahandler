@@ -1,7 +1,10 @@
 package org.openmrs.module.shr.cdahandler.processor.util;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.jfree.util.Log;
 import org.marc.everest.datatypes.AD;
 import org.marc.everest.datatypes.ON;
@@ -12,8 +15,11 @@ import org.marc.everest.rmim.uv.cdar2.pocd_mt000040uv.CustodianOrganization;
 import org.marc.everest.rmim.uv.cdar2.pocd_mt000040uv.Organization;
 import org.openmrs.Location;
 import org.openmrs.LocationAttribute;
+import org.openmrs.LocationAttributeType;
 import org.openmrs.PersonAddress;
+import org.openmrs.api.LocationService;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.shr.cdahandler.CdaHandlerConstants;
 import org.openmrs.module.shr.cdahandler.configuration.CdaHandlerConfiguration;
 import org.openmrs.module.shr.cdahandler.exception.DocumentImportException;
 
@@ -107,7 +113,8 @@ public final class LocationOrganizationProcessorUtil {
 		if(!id.equals(this.m_datatypeUtil.emptyIdString()))
 		{
 			LocationAttribute externalId = new LocationAttribute();
-			externalId.setAttributeType(this.m_metaDataUtil.getOrCreateLocationExternalIdAttributeType());
+			externalId.setAttributeType(this.m_metaDataUtil.getOrCreateLocationExternalIdAttributeType(
+					CdaHandlerConstants.ATTRIBUTE_NAME_SITE_CODE));
 			externalId.setValueReferenceInternal(id);
 			res.addAttribute(externalId);
 		}
@@ -133,18 +140,23 @@ public final class LocationOrganizationProcessorUtil {
 			return locationByUUid;
 		}
 
-		// TODO: This is an organization not a location so we need to get all locations belonging to the organization
-		// TODO: For now this is stored just as a location with an externalId tag
-		// HACK: The function that does this natively in OpenMRS is missing from 1.9 and is available in 1.10
-		for(Location loc : Context.getLocationService().getAllLocations())
-		{
-			List<LocationAttribute> locAttributes = loc.getActiveAttributes(this.m_metaDataUtil.getOrCreateLocationExternalIdAttributeType());
-			if(locAttributes.size() == 1 && locAttributes.get(0).getValueReference().equals(id)) 
-				return loc; 
-		}
-
-		return  null;
+		return findLocationBySiteCode(id);
 	}
+
+	private Location findLocationBySiteCode(String siteCode) throws DocumentImportException {
+		Location result = null;
+		LocationService locationService = Context.getLocationService();
+		LocationAttributeType type = this.m_metaDataUtil.getOrCreateLocationExternalIdAttributeType(
+				CdaHandlerConstants.ATTRIBUTE_NAME_SITE_CODE);
+		Map<LocationAttributeType, Object> map = new HashMap();
+		map.put(type, siteCode);
+		List<Location> locations = locationService.getLocations(null, null, map, true, null, null);
+		if (!CollectionUtils.isEmpty(locations)) {
+			result = locations.get(0);
+		}
+		return result;
+	}
+
 	/**
 	 * Copy address parts from an AD into the specified location
 	 * @throws DocumentImportException 
@@ -267,5 +279,5 @@ public final class LocationOrganizationProcessorUtil {
 		
     }
 
-	
+
 }

@@ -226,12 +226,12 @@ public class OpenmrsMetadataUtil {
 	 * @return The attribute type representing location external id
 	 * @throws DocumentImportException 
 	 */
-	public LocationAttributeType getOrCreateLocationExternalIdAttributeType() throws DocumentImportException
+	public LocationAttributeType getOrCreateLocationExternalIdAttributeType(String attributeName) throws DocumentImportException
 	{
-		LocationAttributeType res = this.getAttributeType(CdaHandlerConstants.ATTRIBUTE_NAME_EXTERNAL_ID, LocationAttributeType.class);
+		LocationAttributeType res = this.getAttributeType(attributeName, LocationAttributeType.class);
 		if(res == null)
 			res = this.createAttributeType(
-				CdaHandlerConstants.ATTRIBUTE_NAME_EXTERNAL_ID, 
+					attributeName,
 				"org.openmrs.customdatatype.datatype.FreeTextDatatype",
 				"External Identifiers",
 				0, 1,
