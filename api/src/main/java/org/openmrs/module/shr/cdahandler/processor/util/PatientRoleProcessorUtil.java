@@ -192,7 +192,8 @@ public final class PatientRoleProcessorUtil {
 			if(existingPid != null && existingPid.getIdentifier().equals(pid.getIdentifier())) // Already have an ID
 				continue;
 			else if(existingPid != null)
-				throw new DocumentImportException("Patient can only have one ID assigned from one authority");
+				throw new DocumentImportException("Patient can only have one ID assigned from one authority: " +
+					existingPid.getIdentifierType().getName());
 			
 			// Provider organization
 			if(importPatient.getProviderOrganization() != null && importPatient.getProviderOrganization().getId() != null)
