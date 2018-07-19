@@ -3,7 +3,7 @@
 	xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
 	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-2.0.xsd">
 
-	<changeSet dbms="mysql" id="shr-cdahandler-conceptclass-auto" author="justin"
+	<changeSet dbms="mysql" id="shr-cdahandler_update-conceptclass-auto" author="justin"
 		runInTransaction="true">
 		<preConditions onError="HALT" onFail="MARK_RAN">
 			<and>
@@ -24,7 +24,7 @@
 	</changeSet>
 
 	<!--  RMIM Concepts -->
-	<changeSet dbms="mysql" id="shr-cdahandler-conceptclass-cda" author="justin"
+	<changeSet dbms="mysql" id="shr-cdahandler_update-conceptclass-cda" author="justin"
 		runInTransaction="true">
 		<preConditions onError="HALT" onFail="MARK_RAN">
 			<and>
@@ -44,7 +44,7 @@
 		</insert>
 	</changeSet>
 	
-	<changeSet dbms="mysql" id="shr-cdahandler-conceptclass-drug-form" author="justin"
+	<changeSet dbms="mysql" id="shr-cdahandler_update-conceptclass-drug-form" author="justin"
 		runInTransaction="true">
 		<preConditions onError="HALT" onFail="MARK_RAN">
 			<and>
@@ -65,7 +65,7 @@
 	</changeSet>
 
 	<!--  RMIM Concepts -->
-	<changeSet dbms="mysql" id="shr-cdahandler-conceptclass-rmim-reason" author="justin"
+	<changeSet dbms="mysql" id="shr-cdahandler_update-conceptclass-rmim-reason" author="justin"
 		runInTransaction="true">
 		<preConditions onError="HALT" onFail="MARK_RAN">
 			<and>
@@ -97,7 +97,7 @@
 		</insert>
 	</changeSet>
 	
-	<changeSet dbms="mysql" id="shr-cdahandler-conceptclass-rmim-approachsite" author="justin"
+	<changeSet dbms="mysql" id="shr-cdahandler_update-conceptclass-rmim-approachsite" author="justin"
 		runInTransaction="true">
 		<preConditions onError="HALT" onFail="MARK_RAN">
 			<and>
@@ -130,7 +130,7 @@
 		</insert>
 	</changeSet>
 
-	<changeSet dbms="mysql" id="shr-cdahandler-conceptclass-rmim-target" author="justin"
+	<changeSet dbms="mysql" id="shr-cdahandler_update-conceptclass-rmim-target" author="justin"
 		runInTransaction="true">
 		<preConditions onError="HALT" onFail="MARK_RAN">
 			<and>
@@ -163,7 +163,7 @@
 		</insert>
 	</changeSet>
 	
-	<changeSet dbms="mysql" id="shr-cdahandler-conceptclass-rmim-reference" author="justin"
+	<changeSet dbms="mysql" id="shr-cdahandler_update-conceptclass-rmim-reference" author="justin"
 		runInTransaction="true">
 		<preConditions onError="HALT" onFail="MARK_RAN">
 			<and>
@@ -196,7 +196,7 @@
 		</insert>
 	</changeSet>
 
-	<changeSet dbms="mysql" id="shr-cdahandler-conceptclass-rmim-route" author="justin"
+	<changeSet dbms="mysql" id="shr-cdahandler_update-conceptclass-rmim-route" author="justin"
 		runInTransaction="true">
 		<preConditions onError="HALT" onFail="MARK_RAN">
 			<and>
@@ -230,7 +230,7 @@
 		</insert>
 	</changeSet>
 
-	<changeSet dbms="mysql" id="shr-cdahandler-conceptclass-rmim-maritalsts" author="justin"
+	<changeSet dbms="mysql" id="shr-cdahandler_update-conceptclass-rmim-maritalsts" author="justin"
 		runInTransaction="true">
 		<preConditions onError="HALT" onFail="MARK_RAN">
 			<and>
@@ -264,7 +264,7 @@
 		</insert>
 	</changeSet>
 	
-	<changeSet dbms="mysql" id="shr-cdahandler-conceptclass-rmim-document-text" author="justin"
+	<changeSet dbms="mysql" id="shr-cdahandler_update-conceptclass-rmim-document-text" author="justin"
 		runInTransaction="true">
 		<preConditions onError="HALT" onFail="MARK_RAN">
 			<and>
@@ -299,7 +299,7 @@
 	</changeSet>
 	
 		
-	<changeSet dbms="mysql" id="shr-cdahandler-conceptclass-rmim-method" author="justin"
+	<changeSet dbms="mysql" id="shr-cdahandler_update-conceptclass-rmim-method" author="justin"
 		runInTransaction="true">
 		<preConditions onError="HALT" onFail="MARK_RAN">
 			<and>
