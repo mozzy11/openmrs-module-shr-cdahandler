@@ -221,22 +221,14 @@ public abstract class DocumentProcessorImpl implements DocumentProcessor {
 		{
 			ServiceEvent serviceEvent = doc.getDocumentationOf().get(0).getServiceEvent();
 			// Effective time should represent the start/stop time of the visit
-			if(serviceEvent.getEffectiveTime() != null && !serviceEvent.getEffectiveTime().isNull())
-			{ 
-				// FROM
-				if(serviceEvent.getEffectiveTime().getLow() != null && !serviceEvent.getEffectiveTime().getLow().isNull())
-					visitInformation.setStartDatetime(serviceEvent.getEffectiveTime().getLow().getDateValue().getTime());
-				// TO
-				if(serviceEvent.getEffectiveTime().getHigh() != null && !serviceEvent.getEffectiveTime().getHigh().isNull())
-					visitInformation.setStopDatetime(serviceEvent.getEffectiveTime().getHigh().getDateValue().getTime());
-			}
-			
+			setVisitDeadlines(visitInformation, serviceEvent);
+
 			// Add performers with their function this is used when the provider is referenced elsewhere in the document
-			for(Performer1 prf : serviceEvent.getPerformer())
-			{
+			for (Performer1 prf : serviceEvent.getPerformer()) {
 				provider = this.m_assignedEntityProcessorUtil.processProvider(prf.getAssignedEntity());
-				if(prf.getFunctionCode().getCode() != null)
+				if (prf.getFunctionCode().getCode() != null) {
 					role = this.m_openmrsMetadataUtil.getOrCreateEncounterRole(prf.getFunctionCode());
+				}
 				visitEncounter.addProvider(role, provider);
 			}
 		}
@@ -339,7 +331,7 @@ public abstract class DocumentProcessorImpl implements DocumentProcessor {
 			createdEncounter.addProvider(role,provider);
 			visitEncounter = createdEncounter;
 			if (!checkEncounterDateIsBetweenVisitTimes(visitEncounter.getEncounterDatetime(), visitInformation)) {
-				Date encounterDate = DateUtils.addMinutes(visitInformation.getStopDatetime(), -1);
+				Date encounterDate = DateUtils.addSeconds(visitInformation.getStopDatetime(), -1);
 				visitEncounter.setEncounterDatetime(encounterDate);
 			}
 		} else {
@@ -361,6 +353,35 @@ public abstract class DocumentProcessorImpl implements DocumentProcessor {
 		visitInformation = Context.getVisitService().saveVisit(visitInformation);
 		
 		return visitInformation;
+	}
+
+	private void setVisitDeadlines(Visit visitInformation, ServiceEvent serviceEvent) {
+		if (serviceEvent.getEffectiveTime() != null && !serviceEvent.getEffectiveTime().isNull()) {
+			setVisitStartDate(visitInformation, serviceEvent);
+			setVisitStopDate(visitInformation, serviceEvent);
+		}
+	}
+
+	private void setVisitStopDate(Visit visitInformation, ServiceEvent serviceEvent) {
+		if (serviceEvent.getEffectiveTime().getHigh() != null &&
+				!serviceEvent.getEffectiveTime().getHigh().isNull()) {
+			Date documentStopDate = serviceEvent.getEffectiveTime().getHigh().getDateValue().getTime();
+			if (visitInformation.getStopDatetime() == null ||
+					visitInformation.getStopDatetime().before(documentStopDate)) {
+				visitInformation.setStopDatetime(documentStopDate);
+			}
+		}
+	}
+
+	private void setVisitStartDate(Visit visitInformation, ServiceEvent serviceEvent) {
+		if (serviceEvent.getEffectiveTime().getLow() != null &&
+				!serviceEvent.getEffectiveTime().getLow().isNull()) {
+			Date documentStartDate = serviceEvent.getEffectiveTime().getLow().getDateValue().getTime();
+			if (visitInformation.getStartDatetime() == null ||
+					visitInformation.getStartDatetime().after(documentStartDate)) {
+				visitInformation.setStartDatetime(documentStartDate);
+			}
+		}
 	}
 
 	private void voidPreviousObservations(Encounter createdEncounter) {
