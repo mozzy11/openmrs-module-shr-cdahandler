@@ -331,7 +331,7 @@ public abstract class DocumentProcessorImpl implements DocumentProcessor {
 			createdEncounter.addProvider(role,provider);
 			visitEncounter = createdEncounter;
 			if (!checkEncounterDateIsBetweenVisitTimes(visitEncounter.getEncounterDatetime(), visitInformation)) {
-				Date encounterDate = DateUtils.addSeconds(visitInformation.getStopDatetime(), -1);
+				Date encounterDate = visitInformation.getStopDatetime();
 				visitEncounter.setEncounterDatetime(encounterDate);
 			}
 		} else {
