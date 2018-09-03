@@ -435,8 +435,8 @@ public final class OpenmrsDataUtil {
 		String value = valueText.substring(valueText.indexOf(" ") + 1);
 
 		if (valueText.contains("value-coded")) {
-			Integer conceptId = Integer.valueOf(value.trim());
-			Concept concept = Context.getConceptService().getConcept(conceptId);
+			String conceptUuid = value.trim();
+			Concept concept = Context.getConceptService().getConceptByUuid(conceptUuid);
 			medicationHistoryObs.setValueCoded(concept);
 		} else if (valueText.contains("value-numeric")) {
 			medicationHistoryObs.setValueNumeric(Double.valueOf(value));
@@ -490,8 +490,8 @@ public final class OpenmrsDataUtil {
 		String obs[] = textStr.split(";");
 		String obsData[] = obs[obs.length-1].split("/");
 
-		Integer conceptId = Integer.valueOf(obsData[0].trim());
-		Concept concept = Context.getConceptService().getConcept(conceptId);
+		String conceptUuid = obsData[0].trim();
+		Concept concept = Context.getConceptService().getConceptByUuid(conceptUuid);
 		observation.setConcept(concept);
 
 		setObsValue(obsData[1], observation);
