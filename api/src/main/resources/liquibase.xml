@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-2.0.xsd">
+
+    <changeSet dbms="mysql" id="shr-cdahandler-obs-accession-number-index" author="wbulawa">
+        <createIndex indexName="accession_number"
+                     tableName="obs">
+            <column name="accession_number" type="varchar(255)"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>
