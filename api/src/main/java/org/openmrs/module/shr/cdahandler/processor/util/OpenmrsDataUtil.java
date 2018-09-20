@@ -46,6 +46,7 @@ import org.openmrs.VisitAttribute;
 import org.openmrs.VisitAttributeType;
 import org.openmrs.activelist.Allergy;
 import org.openmrs.activelist.Problem;
+import org.openmrs.api.ConceptService;
 import org.openmrs.api.context.Context;
 import org.openmrs.customdatatype.InvalidCustomValueException;
 import org.openmrs.module.shr.cdahandler.api.CdaImportService;
@@ -435,8 +436,8 @@ public final class OpenmrsDataUtil {
 		String value = valueText.substring(valueText.indexOf(" ") + 1);
 
 		if (valueText.contains("value-coded")) {
-			String conceptUuid = value.trim();
-			Concept concept = Context.getConceptService().getConceptByUuid(conceptUuid);
+			String code = value.trim();
+			Concept concept = getConceptByCode(code);
 			medicationHistoryObs.setValueCoded(concept);
 		} else if (valueText.contains("value-numeric")) {
 			medicationHistoryObs.setValueNumeric(Double.valueOf(value));
@@ -465,6 +466,19 @@ public final class OpenmrsDataUtil {
 		}
 	}
 
+	private Concept getConceptByCode(String code) {
+		ConceptService conceptService = Context.getConceptService();
+		Concept concept = null;
+		if (StringUtils.isNotBlank(code)) {
+			concept = conceptService.getConceptByUuid(code);
+			if (concept == null) {
+				Integer conceptId = Integer.parseInt(code);
+				concept = conceptService.getConcept(conceptId);
+			}
+		}
+		return concept;
+	}
+
 	private Obs getMatchedObs(Encounter encounter, String accessionNumber) {
 		Obs observation = null;
 		for (Obs obs : encounter.getObs())
@@ -490,8 +504,8 @@ public final class OpenmrsDataUtil {
 		String obs[] = textStr.split(";");
 		String obsData[] = obs[obs.length-1].split("/");
 
-		String conceptUuid = obsData[0].trim();
-		Concept concept = Context.getConceptService().getConceptByUuid(conceptUuid);
+		String conceptCode = obsData[0].trim();
+		Concept concept = getConceptByCode(conceptCode);
 		observation.setConcept(concept);
 
 		setObsValue(obsData[1], observation);
