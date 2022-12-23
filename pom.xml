@@ -35,7 +35,7 @@
 	<properties>
 		<openMRSVersion>1.11.5</openMRSVersion>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <contenthandlerVersion>3.0.1-SNAPSHOT</contenthandlerVersion>
+        <contenthandlerVersion>3.1.0</contenthandlerVersion>
 	</properties>
 
 	<dependencyManagement>
