@@ -10,3 +10,4 @@ omod/target/
 *.classpath
 *.DS_Store
 .project
+.vscode/settings.json

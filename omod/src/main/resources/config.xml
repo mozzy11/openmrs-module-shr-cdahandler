@@ -34,7 +34,7 @@
 
 	<!-- Required modules -->
 	<require_modules>
-		<require_module version="${contenthandlerVersion}">org.openmrs.module.shr-contenthandler
+		<require_module >org.openmrs.module.shr-contenthandler
 		</require_module>
 	</require_modules>
 

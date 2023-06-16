@@ -107,6 +107,7 @@ public final class PatientRoleProcessorUtil {
 				break; // don't look any further we have the ECID
 		}
 		
+		System.out.println(">> search id : " + candidateId.getExtension() + " : " + candidateId.getRoot());
 		// If none found 
 		if (pit==null && this.m_configuration.getAutoCreatePatientIdType()) {
 			candidateId = patientIds.get(0);
@@ -143,10 +144,15 @@ public final class PatientRoleProcessorUtil {
 		// Create identifier type or get identifier type
 		PatientIdentifier pid = this.getApplicablePatientIdentifier(patient.getId());
 		List<Patient> matches = Context.getPatientService().getPatients(null, pid.getIdentifier(), Collections.singletonList(pid.getIdentifierType()), true);
-		
+		System.out.println(".........................<<<<<<debug identifire in CDA handler >>>>.............");
+		System.out.println(">> id : " + pid.getIdentifier());
+		System.out.println(">> id type : " + pid.getIdentifierType().getName());
+		System.out.println(">> mayches : " + matches.size());
 		if (matches.isEmpty() && this.m_configuration.getAutoCreatePatients()) {
+			System.out.println("....................NOT MATCHES.............");
 			res = this.createPatient(patient);
 		} else if(!matches.isEmpty()){
+			System.out.println("...................MATCHES............ >" + matches.size());
 			res = matches.get(0);
 			
 			// Update data for patient
@@ -155,6 +161,7 @@ public final class PatientRoleProcessorUtil {
 				res = this.updatePatientInformation(res, patient);
 				res = Context.getPatientService().savePatient(res);
 			}
+			System.out.println("..................PATIENT............ >" + res.getId() + " : " + res.getFamilyName());
 		}
 		else 
 			throw new DocumentImportException(String.format("Patient %s not found", pid.getIdentifier()));
@@ -193,7 +200,7 @@ public final class PatientRoleProcessorUtil {
 				continue;
 			else if(existingPid != null)
 				throw new DocumentImportException("Patient can only have one ID assigned from one authority: " +
-					existingPid.getIdentifierType().getName());
+					existingPid.getIdentifierType().getName() + " : " + existingPid.getIdentifier());
 			
 			// Provider organization
 			if(importPatient.getProviderOrganization() != null && importPatient.getProviderOrganization().getId() != null)
