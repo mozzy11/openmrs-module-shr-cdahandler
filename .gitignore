@@ -6,3 +6,7 @@ api/target/
 omod/target/
 *.iml
 .idea/
+*.project
+*.classpath
+*.DS_Store
+.project
